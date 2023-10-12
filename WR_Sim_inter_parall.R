@@ -502,53 +502,33 @@ WR_sim_OW[sim_count] <- tau1_OW / tau2_OW
 
 ###DR mu-function
 
-if((!(1 %in% df_comb[df_comb$treatment==1,]$outcomes_comb) &
-    !(2 %in% df_comb[df_comb$treatment==1,]$outcomes_comb)) |
-   (!(1 %in% df_comb[df_comb$treatment==0,]$outcomes_comb) &
-    !(2 %in% df_comb[df_comb$treatment==0,]$outcomes_comb))){
+if((!(1 %in% df_comb[df_comb$treatment==1,]$outcomes_comb) |
+    !(2 %in% df_comb[df_comb$treatment==1,]$outcomes_comb) |
+    !(3 %in% df_comb[df_comb$treatment==1,]$outcomes_comb))|
+   (!(1 %in% df_comb[df_comb$treatment==0,]$outcomes_comb) |
+    !(2 %in% df_comb[df_comb$treatment==0,]$outcomes_comb) |
+    !(3 %in% df_comb[df_comb$treatment==0,]$outcomes_comb))){
   break
 }
 
 else {
-  dr_trt <- multinom(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
-                     data = df_comb[df_comb$treatment == 1,], trace = FALSE)
+  #dr_trt <- multinom(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
+  #                   data = df_comb[df_comb$treatment == 1,], trace = FALSE)
+  lp_start <- rep(0, 21)
+  th_start <- c(-1, 1)
+  start_values <- c(lp_start, th_start)
+  dr_trt <- polr(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
+                 data = df_comb[df_comb$treatment == 1,],
+                 start = start_values)
   cond_prob_trt <- predict(dr_trt, newdata = df_comb, type = "probs")
   
-  dr_ctrl <- multinom(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
-                      data = df_comb[df_comb$treatment == 0,], trace = FALSE)
+  #dr_ctrl <- multinom(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
+  #                    data = df_comb[df_comb$treatment == 0,], trace = FALSE)
+  dr_ctrl <- polr(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
+                 data = df_comb[df_comb$treatment == 0,],
+                 start = start_values)
   cond_prob_ctrl <- predict(dr_ctrl, newdata = df_comb, type = "probs")
 }
-
-prob1_0 <-data.frame(rep(0,n_count))
-colnames(prob1_0) <- "1"
-prob2_0 <-data.frame(rep(0,n_count))
-colnames(prob2_0) <- "2"
-
-
-if(!"1" %in% colnames(cond_prob_trt)){
-  cond_prob_trt <- cbind(prob1_0, cond_prob_trt)
-}
-
-if(!"1" %in% colnames(cond_prob_ctrl)){
-  cond_prob_ctrl <- cbind(prob1_0, cond_prob_ctrl)
-}
-if(!"2" %in% colnames(cond_prob_trt)){
-  col1 <- data.frame(cond_prob_trt[,1])
-  colnames(col1) <- "1"
-  col3 <- data.frame(cond_prob_trt[,2])
-  colnames(col3) <- "3"
-  cond_prob_trt <- cbind(col1, prob2_0, col3)
-}
-
-if(!"2" %in% colnames(cond_prob_ctrl)){
-  col1 <- data.frame(cond_prob_ctrl[,1])
-  colnames(col1) <- "1"
-  col3 <- data.frame(cond_prob_ctrl[,2])
-  colnames(col3) <- "3"
-  cond_prob_ctrl <- cbind(col1, prob2_0, col3)
-}
-
-
 
 
 
@@ -987,8 +967,8 @@ run_time <- end_time - start_time
 
 
 
-run_time#2.957512 per sim_num
-#13 min on cluster per sim_num
+run_time#3.068355 per sim_num
+
 
 
 
@@ -1030,16 +1010,6 @@ write.table(DROW_df,
 write.table(true_val_df,
             file=paste("results/true_val_newscenario",scenario,".txt",sep=""), 
             sep="\t", row.names=F)
-
-
-
-
-
-
-
-
-
-
 
 
 

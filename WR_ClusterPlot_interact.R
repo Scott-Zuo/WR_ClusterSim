@@ -347,8 +347,8 @@ dev.off()
 
 
 
-
-
+true_val_df <- read.table("true_val_newscenario1.txt", header=TRUE, sep="")
+true_val_df
 
 
 
