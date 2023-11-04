@@ -175,12 +175,22 @@ for (i in 1:(ncol(trt_cov)-1)) {
 bi_trt_interactions <- numeric()
 bi_ctrl_interactions <- numeric()
 
+
+
 for (i in 1:(length(bi_trt)-1)) {
   for (j in (i+1):length(bi_trt)) {
-    bi_trt_interactions <- c(bi_trt_interactions, bi_trt[i] * bi_trt[j])
-    bi_ctrl_interactions <- c(bi_ctrl_interactions, bi_ctrl[i] * bi_ctrl[j])
+    if(sign(bi_trt[i]) == sign(bi_trt[j])){
+      bi_trt_interactions <- c(bi_trt_interactions, bi_trt[i] + bi_trt[j])
+      bi_ctrl_interactions <- c(bi_ctrl_interactions, bi_ctrl[i] + bi_ctrl[j])
+    }
+    else {
+      bi_trt_interactions <- c(bi_trt_interactions, 0.25*(sample(c(-1, 1), 1))*bi_trt[i] * bi_trt[j])
+      bi_ctrl_interactions <- c(bi_ctrl_interactions, 0.25*(sample(c(-1, 1), 1))*bi_ctrl[i] * bi_ctrl[j])
+    }
   }
 }
+
+
 
 combined_trt_interact <- cbind(trt_cov, trt_cov_interactions)
 combined_ctrl_interact <- cbind(ctrl_cov, ctrl_cov_interactions)
@@ -200,7 +210,6 @@ prob_1_trt <- 1 - prob_2to3_trt
 prob_2_trt <- prob_2to3_trt - prob_3_trt
 
 
-
 ## Probability Ctrl
 
 prob_2to3_ctrl <- inv_logit(logodds1_ctrl)
@@ -218,8 +227,6 @@ for (i in 1:n_count) {
   )
 }
 
-
-
 outcomes_ctrl <- c()
 for (i in 1:n_count) {
   outcomes_ctrl[i] <- sample(
@@ -228,6 +235,9 @@ for (i in 1:n_count) {
     prob = c(prob_1_ctrl[i], prob_2_ctrl[i], prob_3_ctrl[i])
   )
 }
+
+
+
 
 
 
@@ -1005,6 +1015,11 @@ write.table(DROW_df,
 write.table(true_val_df,
             file=paste("results/true_val_newscenario",scenario,".txt",sep=""), 
             sep="\t", row.names=F)
+
+
+
+
+
 
 
 

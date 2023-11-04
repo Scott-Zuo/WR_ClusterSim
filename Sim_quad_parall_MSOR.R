@@ -165,16 +165,18 @@ ctrl_cov <- data.frame(x1_ctrl, x2_ctrl, x3_ctrl, x4_ctrl, x5_ctrl, x6_ctrl)
 trt_cov_quad <- trt_cov^2
 ctrl_cov_quad <- ctrl_cov^2
 
+bi_trt_quad <- 2*bi_trt
+bi_ctrl_quad <- 2*bi_ctrl
 
 
 combined_trt_quad <- cbind(trt_cov, trt_cov_quad)
 combined_ctrl_quad <- cbind(ctrl_cov, ctrl_cov_quad)
 
-logodds1_trt <- b01 + as.matrix(combined_trt_quad) %*% c(bi_trt, bi_trt) + trt_eff1
-logodds2_trt <- b02 + as.matrix(combined_trt_quad) %*% c(bi_trt, bi_trt) + trt_eff1
+logodds1_trt <- b01 + as.matrix(combined_trt_quad) %*% c(bi_trt, bi_trt_quad) + trt_eff1
+logodds2_trt <- b02 + as.matrix(combined_trt_quad) %*% c(bi_trt, bi_trt_quad) + trt_eff1
 
-logodds1_ctrl <- b01 + as.matrix(combined_ctrl_quad) %*% c(bi_ctrl, bi_ctrl)
-logodds2_ctrl <- b02 + as.matrix(combined_ctrl_quad) %*% c(bi_ctrl, bi_ctrl)
+logodds1_ctrl <- b01 + as.matrix(combined_ctrl_quad) %*% c(bi_ctrl, bi_ctrl_quad)
+logodds2_ctrl <- b02 + as.matrix(combined_ctrl_quad) %*% c(bi_ctrl, bi_ctrl_quad)
 
 
 ## Probability Trt
@@ -220,17 +222,15 @@ for (i in 1:n_count) {
 
 
 
-
-
 ############################True Win Ratio##############################
 
 # ctrl but assigned in trt group
-logodds1_trt_assigned <- b01 + as.matrix(combined_ctrl_quad) %*% c(bi_trt, bi_trt) + trt_eff1
-logodds2_trt_assigned <- b02 + as.matrix(combined_ctrl_quad) %*% c(bi_trt, bi_trt) + trt_eff1
+logodds1_trt_assigned <- b01 + as.matrix(combined_ctrl_quad) %*% c(bi_trt, bi_trt_quad) + trt_eff1
+logodds2_trt_assigned <- b02 + as.matrix(combined_ctrl_quad) %*% c(bi_trt, bi_trt_quad) + trt_eff1
 
 # trt but assigned in ctrl group
-logodds1_ctrl_assigned <- b01 + as.matrix(combined_trt_quad) %*% c(bi_ctrl, bi_ctrl)
-logodds2_ctrl_assigned <- b02 + as.matrix(combined_trt_quad) %*% c(bi_ctrl, bi_ctrl)
+logodds1_ctrl_assigned <- b01 + as.matrix(combined_trt_quad) %*% c(bi_ctrl, bi_ctrl_quad)
+logodds2_ctrl_assigned <- b02 + as.matrix(combined_trt_quad) %*% c(bi_ctrl, bi_ctrl_quad)
 
 ## Probability
 

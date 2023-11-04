@@ -8,9 +8,9 @@ library(foreach)
 library(doParallel)
 #numCores <- detectCores()
 
-#####################################################
-######## Expanded with interaction terms ############
-#####################################################
+################################################################
+########  Expanded with quadratic terms Imbalance MSOR   #######
+################################################################
 
 args<-commandArgs(trailingOnly = TRUE)
 k<-as.integer(args[1])
@@ -124,8 +124,8 @@ set.seed(1)
 
 for (count_temp in 1:re_count){
 
-n_count <- count_temp*step_size
-
+n_count_trt <- round(count_temp*step_size*1.4)
+n_count_ctrl <- round(count_temp*step_size*0.6)
 
 WD_sim_trueWR <- numeric(sim_num)
 WD_sim <- numeric(sim_num)
@@ -145,61 +145,38 @@ WR_sim_DROW <- numeric(sim_num)
 for (sim_count in 1:sim_num){
 
 # covariates
-x1_trt <- rnorm(n_count, mean = 1, sd = sds[1])
-x1_ctrl <- rnorm(n_count, mean = 1, sd = sds[1])
-x2_trt <- rnorm(n_count, mean = 0.9, sd = sds[2])
-x2_ctrl <- rnorm(n_count, mean = 0.9, sd = sds[2])
-x3_trt <- rnorm(n_count, mean = 0.8, sd = sds[3])
-x3_ctrl <- rnorm(n_count, mean = 0.8, sd = sds[3])
+x1_trt <- rnorm(n_count_trt, mean = 1, sd = sds[1])
+x1_ctrl <- rnorm(n_count_ctrl, mean = 1, sd = sds[1])
+x2_trt <- rnorm(n_count_trt, mean = 0.9, sd = sds[2])
+x2_ctrl <- rnorm(n_count_ctrl, mean = 0.9, sd = sds[2])
+x3_trt <- rnorm(n_count_trt, mean = 0.8, sd = sds[3])
+x3_ctrl <- rnorm(n_count_ctrl, mean = 0.8, sd = sds[3])
 
-x4_trt <- rbinom(n_count,1,bern_param[1])
-x4_ctrl <- rbinom(n_count,1,bern_param[1])
-x5_trt <- rbinom(n_count,1,bern_param[2])
-x5_ctrl <- rbinom(n_count,1,bern_param[2])
-x6_trt <- rbinom(n_count,1,bern_param[3])
-x6_ctrl <- rbinom(n_count,1,bern_param[3])
+x4_trt <- rbinom(n_count_trt,1,bern_param[1])
+x4_ctrl <- rbinom(n_count_ctrl,1,bern_param[1])
+x5_trt <- rbinom(n_count_trt,1,bern_param[2])
+x5_ctrl <- rbinom(n_count_ctrl,1,bern_param[2])
+x6_trt <- rbinom(n_count_trt,1,bern_param[3])
+x6_ctrl <- rbinom(n_count_ctrl,1,bern_param[3])
 
 trt_cov <- data.frame(x1_trt, x2_trt, x3_trt, x4_trt, x5_trt, x6_trt)
 ctrl_cov <- data.frame(x1_ctrl, x2_ctrl, x3_ctrl, x4_ctrl, x5_ctrl, x6_ctrl)
 
-trt_cov_interactions <- data.frame(matrix(nrow = nrow(trt_cov), ncol = 0))
-ctrl_cov_interactions <- data.frame(matrix(nrow = nrow(ctrl_cov), ncol = 0))
+trt_cov_quad <- trt_cov^2
+ctrl_cov_quad <- ctrl_cov^2
 
-for (i in 1:(ncol(trt_cov)-1)) {
-  for (j in (i+1):ncol(trt_cov)) {
-    trt_cov_interactions[, paste0(names(trt_cov)[i], "_x_", names(trt_cov)[j])] <- trt_cov[,i] * trt_cov[,j]
-    ctrl_cov_interactions[, paste0(names(ctrl_cov)[i], "_x_", names(ctrl_cov)[j])] <- ctrl_cov[,i] * ctrl_cov[,j]
-  }
-}
-
-bi_trt_interactions <- numeric()
-bi_ctrl_interactions <- numeric()
+bi_trt_quad <- 2*bi_trt
+bi_ctrl_quad <- 2*bi_ctrl
 
 
+combined_trt_quad <- cbind(trt_cov, trt_cov_quad)
+combined_ctrl_quad <- cbind(ctrl_cov, ctrl_cov_quad)
 
-for (i in 1:(length(bi_trt)-1)) {
-  for (j in (i+1):length(bi_trt)) {
-    if(sign(bi_trt[i]) == sign(bi_trt[j])){
-      bi_trt_interactions <- c(bi_trt_interactions, bi_trt[i] + bi_trt[j])
-      bi_ctrl_interactions <- c(bi_ctrl_interactions, bi_ctrl[i] + bi_ctrl[j])
-    }
-    else {
-      bi_trt_interactions <- c(bi_trt_interactions, 0.25*(sample(c(-1, 1), 1))*bi_trt[i] * bi_trt[j])
-      bi_ctrl_interactions <- c(bi_ctrl_interactions, 0.25*(sample(c(-1, 1), 1))*bi_ctrl[i] * bi_ctrl[j])
-    }
-  }
-}
+logodds1_trt <- b01 + as.matrix(combined_trt_quad) %*% c(bi_trt, bi_trt_quad) + trt_eff1
+logodds2_trt <- b02 + as.matrix(combined_trt_quad) %*% c(bi_trt, bi_trt_quad) + trt_eff1
 
-
-
-combined_trt_interact <- cbind(trt_cov, trt_cov_interactions)
-combined_ctrl_interact <- cbind(ctrl_cov, ctrl_cov_interactions)
-
-logodds1_trt <- b01 + as.matrix(combined_trt_interact) %*% c(bi_trt, bi_trt_interactions) + trt_eff1
-logodds2_trt <- b02 + as.matrix(combined_trt_interact) %*% c(bi_trt, bi_trt_interactions) + trt_eff1
-
-logodds1_ctrl <- b01 + as.matrix(combined_ctrl_interact) %*% c(bi_ctrl, bi_ctrl_interactions)
-logodds2_ctrl <- b02 + as.matrix(combined_ctrl_interact) %*% c(bi_ctrl, bi_ctrl_interactions)
+logodds1_ctrl <- b01 + as.matrix(combined_ctrl_quad) %*% c(bi_ctrl, bi_ctrl_quad)
+logodds2_ctrl <- b02 + as.matrix(combined_ctrl_quad) %*% c(bi_ctrl, bi_ctrl_quad)
 
 
 ## Probability Trt
@@ -208,6 +185,7 @@ prob_2to3_trt <- inv_logit(logodds1_trt)
 prob_3_trt <- inv_logit(logodds2_trt)
 prob_1_trt <- 1 - prob_2to3_trt
 prob_2_trt <- prob_2to3_trt - prob_3_trt
+
 
 
 ## Probability Ctrl
@@ -219,7 +197,7 @@ prob_2_ctrl <- prob_2to3_ctrl - prob_3_ctrl
 
 #generate random outcomes
 outcomes_trt <- c()
-for (i in 1:n_count) {
+for (i in 1:n_count_trt) {
   outcomes_trt[i] <- sample(
     outcomes_3lvl, 
     size = 1,
@@ -227,8 +205,10 @@ for (i in 1:n_count) {
   )
 }
 
+
+
 outcomes_ctrl <- c()
-for (i in 1:n_count) {
+for (i in 1:n_count_ctrl) {
   outcomes_ctrl[i] <- sample(
     outcomes_3lvl, 
     size = 1,
@@ -242,20 +222,16 @@ for (i in 1:n_count) {
 
 
 
-
-
-
-
-
 ############################True Win Ratio##############################
 
 # ctrl but assigned in trt group
-logodds1_trt_assigned <- b01 + as.matrix(combined_ctrl_interact) %*% c(bi_trt, bi_trt_interactions) + trt_eff1
-logodds2_trt_assigned <- b02 + as.matrix(combined_ctrl_interact) %*% c(bi_trt, bi_trt_interactions) + trt_eff1
+logodds1_trt_assigned <- b01 + as.matrix(combined_ctrl_quad) %*% c(bi_trt, bi_trt_quad) + trt_eff1
+logodds2_trt_assigned <- b02 + as.matrix(combined_ctrl_quad) %*% c(bi_trt, bi_trt_quad) + trt_eff1
 
 # trt but assigned in ctrl group
-logodds1_ctrl_assigned <- b01 + as.matrix(combined_trt_interact) %*% c(bi_ctrl, bi_ctrl_interactions)
-logodds2_ctrl_assigned <- b02 + as.matrix(combined_trt_interact) %*% c(bi_ctrl, bi_ctrl_interactions)
+logodds1_ctrl_assigned <- b01 + as.matrix(combined_trt_quad) %*% c(bi_ctrl, bi_ctrl_quad)
+logodds2_ctrl_assigned <- b02 + as.matrix(combined_trt_quad) %*% c(bi_ctrl, bi_ctrl_quad)
+
 
 ## Probability
 
@@ -273,7 +249,7 @@ prob_2_ctrl_assigned <- prob_2to3_ctrl_assigned - prob_3_ctrl_assigned
 
 ## outcomes
 outcomes_trt_assigned <- c()
-for (i in 1:n_count) {
+for (i in 1:n_count_ctrl) {
   outcomes_trt_assigned[i] <- sample(
     outcomes_3lvl, 
     size = 1,
@@ -282,7 +258,7 @@ for (i in 1:n_count) {
 }
 
 outcomes_ctrl_assigned <- c()
-for (i in 1:n_count) {
+for (i in 1:n_count_trt) {
   outcomes_ctrl_assigned[i] <- sample(
     outcomes_3lvl, 
     size = 1,
@@ -334,7 +310,6 @@ ctrl_winpr_true <- sum(as.vector(ctrlwin_true), na.rm = TRUE) / (nrow(df_trt_tru
 # Update WD_sim_trueWR and WR_sim_trueWR
 WD_sim_trueWR[sim_count] <- trt_winpr_true - ctrl_winpr_true
 WR_sim_trueWR[sim_count] <- trt_winpr_true / ctrl_winpr_true
-
 
 
 
@@ -406,7 +381,7 @@ colnames(df_trt) <- "outcomes_comb"
 colnames(df_ctrl) <- "outcomes_comb"
 
 df_comb <- rbind(df_trt, df_ctrl)
-df_comb$treatment <- c(rep(1,n_count), rep(0,n_count))
+df_comb$treatment <- c(rep(1,n_count_trt), rep(0,n_count_ctrl))
 df_comb$x1 <- c(x1_trt, x1_ctrl)
 df_comb$x2 <- c(x2_trt, x2_ctrl)
 df_comb$x3 <- c(x3_trt, x3_ctrl)
@@ -421,10 +396,10 @@ pi_func <- fitted(PropScore)
 
 # Define the IPW comparison function
 compare_rows_IPW <- function(i) {
-  g_hfunc_IPW1_vec <- numeric(2*n_count)
-  g_hfunc_IPW2_vec <- numeric(2*n_count)
+  g_hfunc_IPW1_vec <- numeric(n_count_trt+n_count_ctrl)
+  g_hfunc_IPW2_vec <- numeric(n_count_trt+n_count_ctrl)
   
-  for (j in 1:(2*n_count)) {
+  for (j in 1:(n_count_trt+n_count_ctrl)) {
     if (df_comb[i,1] > df_comb[j,1]) {
       g_hfunc_IPW1_vec[j] = (df_comb[i,"treatment"] * (1-df_comb[j,"treatment"]) * 1 / (pi_func[i] * (1-pi_func[j])))
       g_hfunc_IPW2_vec[j] = 0
@@ -438,7 +413,7 @@ compare_rows_IPW <- function(i) {
 }
 
 # Parallelize the outer loop
-results_IPW <- mclapply(1:(2*n_count), compare_rows_IPW, mc.cores = numCores)
+results_IPW <- mclapply(1:(n_count_trt+n_count_ctrl), compare_rows_IPW, mc.cores = numCores)
 
 # Aggregate results
 g_hfunc_IPW1 <- do.call(rbind, lapply(results_IPW, function(x) x$IPW1))
@@ -468,10 +443,10 @@ WR_sim_IPW[sim_count] <- tau1_IPW / tau2_IPW
 
 
 compare_rows_OW <- function(i) {
-  g_hfunc_OW1_vec <- numeric(2*n_count)
-  g_hfunc_OW2_vec <- numeric(2*n_count)
+  g_hfunc_OW1_vec <- numeric(n_count_trt+n_count_ctrl)
+  g_hfunc_OW2_vec <- numeric(n_count_trt+n_count_ctrl)
   
-  for (j in 1:(2*n_count)) {
+  for (j in 1:(n_count_trt+n_count_ctrl)) {
     if (df_comb[i,1] > df_comb[j,1]) {
       g_hfunc_OW1_vec[j] = (df_comb[i,"treatment"] * (1-df_comb[j,"treatment"]) * (1-pi_func[i]) * pi_func[j])
       g_hfunc_OW2_vec[j] = 0
@@ -485,7 +460,7 @@ compare_rows_OW <- function(i) {
 }
 
 # Parallelize the outer loop
-results_OW <- mclapply(1:(2*n_count), compare_rows_OW, mc.cores = numCores)
+results_OW <- mclapply(1:(n_count_trt+n_count_ctrl), compare_rows_OW, mc.cores = numCores)
 
 # Aggregate results
 g_hfunc_OW1 <- do.call(rbind, lapply(results_OW, function(x) x$OW1))
@@ -522,24 +497,21 @@ if((!(1 %in% df_comb[df_comb$treatment==1,]$outcomes_comb) |
 }
 
 else {
-  #dr_trt <- multinom(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
-  #                   data = df_comb[df_comb$treatment == 1,], trace = FALSE)
-  lp_start <- rep(0, 21)
+  lp_start <- rep(0, 6)
   th_start <- c(-1, 1)
   start_values <- c(lp_start, th_start)
-  dr_trt <- polr(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
+  dr_trt <- polr(factor(outcomes_comb) ~ x1 + x2 + x3 + x4 + x5 + x6,
                  data = df_comb[df_comb$treatment == 1,],
                  start = start_values)
   cond_prob_trt <- predict(dr_trt, newdata = df_comb, type = "probs")
   
-  #dr_ctrl <- multinom(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
-  #                    data = df_comb[df_comb$treatment == 0,], trace = FALSE)
-  dr_ctrl <- polr(factor(outcomes_comb) ~ (x1 + x2 + x3 + x4 + x5 + x6)^2,
-                 data = df_comb[df_comb$treatment == 0,],
-                 start = start_values)
+  
+  dr_ctrl <- polr(factor(outcomes_comb) ~ x1 + x2 + x3 + x4 + x5 + x6,
+                  data = df_comb[df_comb$treatment == 0,],
+                  start = start_values)
   cond_prob_ctrl <- predict(dr_ctrl, newdata = df_comb, type = "probs")
+  
 }
-
 
 
 cl <- makeCluster(numCores - 1)  # Use all cores except one
@@ -547,18 +519,18 @@ registerDoParallel(cl)
 
 # Define the parallelized function
 compare_rows_DR <- function(i, df_comb, pi_func, cond_prob_trt, cond_prob_ctrl) {
-  n_count <- nrow(df_comb) / 2
+
   
-  DR_num1_vec <- numeric(2*n_count)
-  DR_denom1_vec <- numeric(2*n_count)
-  DR_num2_vec <- numeric(2*n_count)
-  DR_denom2_vec <- numeric(2*n_count)
-  DR_mu1_vec <- numeric(2*n_count)
-  DR_mu2_vec <- numeric(2*n_count)
-  DR_mu_denom1_vec <- numeric(2*n_count)
-  DR_mu_denom2_vec <- numeric(2*n_count)
+  DR_num1_vec <- numeric(n_count_trt+n_count_ctrl)
+  DR_denom1_vec <- numeric(n_count_trt+n_count_ctrl)
+  DR_num2_vec <- numeric(n_count_trt+n_count_ctrl)
+  DR_denom2_vec <- numeric(n_count_trt+n_count_ctrl)
+  DR_mu1_vec <- numeric(n_count_trt+n_count_ctrl)
+  DR_mu2_vec <- numeric(n_count_trt+n_count_ctrl)
+  DR_mu_denom1_vec <- numeric(n_count_trt+n_count_ctrl)
+  DR_mu_denom2_vec <- numeric(n_count_trt+n_count_ctrl)
   
-  for(j in 1:(2*n_count)){
+  for(j in 1:(n_count_trt+n_count_ctrl)){
     if(i != j){
       DR_num1_vec[j] = (df_comb[i,'treatment'] * (1 - df_comb[j,'treatment'])) * (1/(pi_func[i] * (1 - pi_func[j]))) *
         ((df_comb[i,1] > df_comb[j,1]) - 
@@ -589,6 +561,7 @@ compare_rows_DR <- function(i, df_comb, pi_func, cond_prob_trt, cond_prob_ctrl) 
     }
   }
   
+  
   return(list(DR_num1 = DR_num1_vec, DR_denom1 = DR_denom1_vec, 
               DR_num2 = DR_num2_vec, DR_denom2 = DR_denom2_vec,
               DR_mu1 = DR_mu1_vec, DR_mu_denom1 = DR_mu_denom1_vec,
@@ -598,13 +571,14 @@ compare_rows_DR <- function(i, df_comb, pi_func, cond_prob_trt, cond_prob_ctrl) 
 
 
 #Use the function to compute the matrices
-# results_DR <- lapply(1:(2*n_count), compare_rows_DR,
+# results_DR <- lapply(1:(n_count_trt+n_count_ctrl), compare_rows_DR,
 #                      df_comb=df_comb, pi_func=pi_func,
 #                      cond_prob_trt=cond_prob_trt, cond_prob_ctrl=cond_prob_ctrl)
 
-results_DR <- foreach(i=1:(2*n_count)) %dopar% {
+results_DR <- foreach(i=1:(n_count_trt+n_count_ctrl)) %dopar% {
   compare_rows_DR(i, df_comb, pi_func, cond_prob_trt, cond_prob_ctrl)
 }
+
 
 
 # Combine the results
@@ -632,6 +606,7 @@ WR_sim_DR[sim_count] <- tau1_DR/tau2_DR
 
 
 
+
 stopCluster(cl)
 
 
@@ -648,18 +623,18 @@ registerDoParallel(cl)
 
 
 compare_rows_DROW <- function(i, df_comb, pi_func, cond_prob_trt, cond_prob_ctrl) {
-  n_count <- nrow(df_comb) / 2
   
-  DROW_num1_vec <- numeric(2*n_count)
-  DROW_denom1_vec <- numeric(2*n_count)
-  DROW_num2_vec <- numeric(2*n_count)
-  DROW_denom2_vec <- numeric(2*n_count)
-  DROW_mu1_vec <- numeric(2*n_count)
-  DROW_mu2_vec <- numeric(2*n_count)
-  DROW_mu_denom1_vec <- numeric(2*n_count)
-  DROW_mu_denom2_vec <- numeric(2*n_count)
   
-  for(j in 1:(2*n_count)){
+  DROW_num1_vec <- numeric(n_count_trt+n_count_ctrl)
+  DROW_denom1_vec <- numeric(n_count_trt+n_count_ctrl)
+  DROW_num2_vec <- numeric(n_count_trt+n_count_ctrl)
+  DROW_denom2_vec <- numeric(n_count_trt+n_count_ctrl)
+  DROW_mu1_vec <- numeric(n_count_trt+n_count_ctrl)
+  DROW_mu2_vec <- numeric(n_count_trt+n_count_ctrl)
+  DROW_mu_denom1_vec <- numeric(n_count_trt+n_count_ctrl)
+  DROW_mu_denom2_vec <- numeric(n_count_trt+n_count_ctrl)
+  
+  for(j in 1:(n_count_trt+n_count_ctrl)){
     if(i != j){
       DROW_num1_vec[j] = (df_comb[i,'treatment'] * (1 - df_comb[j,'treatment'])) * ((1-pi_func[i]) * pi_func[j]) *
         ((df_comb[i,1] > df_comb[j,1]) - 
@@ -703,11 +678,11 @@ compare_rows_DROW <- function(i, df_comb, pi_func, cond_prob_trt, cond_prob_ctrl
 
 
 # Use the function to compute the matrices
-# results_DROW <- lapply(1:(2*n_count), compare_rows_DROW, 
+# results_DROW <- lapply(1:(n_count_trt+n_count_ctrl), compare_rows_DROW, 
 #                        df_comb=df_comb, pi_func=pi_func, 
 #                        cond_prob_trt=cond_prob_trt, cond_prob_ctrl=cond_prob_ctrl)
 
-results_DROW <- foreach(i=1:(2*n_count)) %dopar% {
+results_DROW <- foreach(i=1:(n_count_trt+n_count_ctrl)) %dopar% {
   compare_rows_DROW(i, df_comb, pi_func, cond_prob_trt, cond_prob_ctrl)
 }
 
@@ -977,7 +952,7 @@ run_time <- end_time - start_time
 
 
 
-run_time#3.068355 per sim_num
+run_time#3.160874 per sim_num
 
 
 
@@ -1020,15 +995,5 @@ write.table(DROW_df,
 write.table(true_val_df,
             file=paste("results/true_val_newscenario",scenario,".txt",sep=""), 
             sep="\t", row.names=F)
-
-
-
-
-
-
-
-
-
-
 
 
