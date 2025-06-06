@@ -287,67 +287,67 @@ re_df_WR$estimator <- as.factor(re_df_WR$estimator)
 
 
 
-re_plot_WD <- ggplot(re_df_WD, aes(x=samplesize, y = relative_eff,
-                                   color = estimator)) + 
-  geom_point() + 
+#––– Quad Relative Efficiency Plot for Win Difference (quad_RE_WD) –––
+re_plot_WD <- ggplot(re_df_WD, aes(x = samplesize, y = relative_eff, color = estimator)) +
+  geom_point() +
   geom_line(aes(group = estimator)) +
-  scale_color_manual(values = c("IPW" = "gold", "OW" = "orange",
-                                "AIPW" = "red", "AOW" = "brown")) +
-  geom_hline(yintercept=1, linetype="dashed", color = "red") +
-  ggtitle("Relative Efficiency from Simulation for Win Difference") +
-  xlab("Sample Size") + ylab("Relative Efficiency") +
-  scale_x_continuous(breaks=seq(0,step_size*re_count,step_size)) +
-  coord_cartesian(ylim = c(0.8, 2.5)) +
+  # more‐distinct colors: black (IPW), blue (OW), green (AIPW), red (AOW)
+  scale_color_manual(values = c(
+    "IPW"        = "black",
+    "OW"         = "blue",
+    "AIPW"       = "green",
+    "AOW"        = "red"
+  )) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  xlab("Sample Size") +
+  ylab("Relative Efficiency") +
+  scale_x_continuous(breaks = seq(0, step_size * re_count, step_size)) +
+  coord_cartesian(ylim = c(1, 3)) +
   theme(
-    plot.title = element_text(color="red", size=12, face="bold.italic"),
-    axis.title.x = element_text(size=12),
-    axis.text.x = element_text(size=12),
-    axis.title.y = element_text(size=12),
-    legend.text = element_text(size=12)
+    plot.title      = element_blank(),
+    axis.title.x    = element_text(size = 12),
+    axis.text.x     = element_text(size = 12),
+    axis.title.y    = element_text(size = 12),
+    legend.text     = element_text(size = 12)
   )
 
 
-re_plot_WR <- ggplot(re_df_WR, aes(x=samplesize, y = relative_eff,
-                                   color = estimator)) + 
-  geom_point() + 
-  geom_line(aes(group = estimator)) +
-  scale_color_manual(values = c("IPW" = "gold", "OW" = "orange",
-                                "AIPW" = "red", "AOW" = "brown")) +
-  geom_hline(yintercept=1, linetype="dashed", color = "red") +
-  ggtitle("Relative Efficiency from Simulation for Win Ratio") +
-  xlab("Sample Size") + ylab("Relative Efficiency") +
-  scale_x_continuous(breaks=seq(0,step_size*re_count,step_size)) +
-  coord_cartesian(ylim = c(0.8, 2.5)) +
-  theme(
-    plot.title = element_text(color="red", size=12, face="bold.italic"),
-    axis.title.x = element_text(size=12),
-    axis.text.x = element_text(size=12),
-    axis.title.y = element_text(size=12),
-    legend.text = element_text(size=12)
-  )
-
-
-png(filename = "fig_quad_RE_WD.png", units = "in",
-    width = 6, height = 4, res = 300)
+png(filename = "fig_quad_RE_WD.png", units = "in", width = 6, height = 4, res = 300)
 re_plot_WD
 dev.off()
 
-png(filename = "fig_quad_RE_WR.png", units = "in",
-    width = 6, height = 4, res = 300)
+ggsave("fig_quad_RE_WD.eps", plot = re_plot_WD, device = "eps", width = 6, height = 4)
+
+
+#––– Quad Relative Efficiency Plot for Win Ratio (quad_RE_WR) –––
+re_plot_WR <- ggplot(re_df_WR, aes(x = samplesize, y = relative_eff, color = estimator)) +
+  geom_point() +
+  geom_line(aes(group = estimator)) +
+  scale_color_manual(values = c(
+    "IPW"        = "black",
+    "OW"         = "blue",
+    "AIPW"       = "green",
+    "AOW"        = "red"
+  )) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  xlab("Sample Size") +
+  ylab("Relative Efficiency") +
+  scale_x_continuous(breaks = seq(0, step_size * re_count, step_size)) +
+  coord_cartesian(ylim = c(1, 3)) +
+  theme(
+    plot.title      = element_blank(),
+    axis.title.x    = element_text(size = 12),
+    axis.text.x     = element_text(size = 12),
+    axis.title.y    = element_text(size = 12),
+    legend.text     = element_text(size = 12)
+  )
+
+
+png(filename = "fig_quad_RE_WR.png", units = "in", width = 6, height = 4, res = 300)
 re_plot_WR
 dev.off()
 
-
-
-
-
-ggsave("fig_quad_RE_WD.eps", plot = re_plot_WD, device = "eps", width = 6, height = 4)
 ggsave("fig_quad_RE_WR.eps", plot = re_plot_WR, device = "eps", width = 6, height = 4)
-
-
-
-
-
 
 
 
