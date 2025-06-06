@@ -302,7 +302,7 @@ re_plot_WD <- ggplot(re_df_WD, aes(x = samplesize, y = relative_eff, color = est
   ylab("Relative Efficiency") +
   scale_x_continuous(breaks = seq(0, step_size * re_count, step_size)) +
   # force identical y‐range across plots
-  coord_cartesian(ylim = c(1, 3)) +
+  coord_cartesian(ylim = c(1, 2)) +
   theme(
     # no ggtitle, so we clear the plot.title element
     plot.title      = element_blank(),
@@ -325,7 +325,7 @@ re_plot_WR <- ggplot(re_df_WR, aes(x = samplesize, y = relative_eff, color = est
   xlab("Sample Size") +
   ylab("Relative Efficiency") +
   scale_x_continuous(breaks = seq(0, step_size * re_count, step_size)) +
-  coord_cartesian(ylim = c(1, 3)) +
+  coord_cartesian(ylim = c(1, 2.5)) +
   theme(
     plot.title      = element_blank(),
     axis.title.x    = element_text(size = 12),
