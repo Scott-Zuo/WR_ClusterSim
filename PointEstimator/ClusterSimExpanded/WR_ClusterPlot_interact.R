@@ -292,17 +292,17 @@ re_plot_WD <- ggplot(re_df_WD, aes(x = samplesize, y = relative_eff, color = est
   geom_line(aes(group = estimator)) +
   # more‐distinct colors: black (unadjusted), blue (IPW), green (OW), red (AIPW), purple (AOW)
   scale_color_manual(values = c(
-    "IPW"        = "blue",
-    "OW"         = "green",
-    "AIPW"       = "red",
-    "AOW"        = "black"
+    "IPW"        = "black",
+    "OW"         = "blue",
+    "AIPW"       = "green",
+    "AOW"        = "red"
   )) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   xlab("Sample Size") +
   ylab("Relative Efficiency") +
   scale_x_continuous(breaks = seq(0, step_size * re_count, step_size)) +
   # force identical y‐range across plots
-  coord_cartesian(ylim = c(1, 2)) +
+  coord_cartesian(ylim = c(1, 1.8)) +
   theme(
     # no ggtitle, so we clear the plot.title element
     plot.title      = element_blank(),
@@ -316,10 +316,10 @@ re_plot_WR <- ggplot(re_df_WR, aes(x = samplesize, y = relative_eff, color = est
   geom_point() +
   geom_line(aes(group = estimator)) +
   scale_color_manual(values = c(
-    "IPW"        = "blue",
-    "OW"         = "green",
-    "AIPW"       = "red",
-    "AOW"        = "black"
+    "IPW"        = "black",
+    "OW"         = "blue",
+    "AIPW"       = "green",
+    "AOW"        = "red"
   )) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   xlab("Sample Size") +

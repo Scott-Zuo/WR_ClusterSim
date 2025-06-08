@@ -303,7 +303,7 @@ re_plot_WD <- ggplot(re_df_WD, aes(x = samplesize, y = relative_eff, color = est
   ylab("Relative Efficiency") +
   scale_x_continuous(breaks = seq(0, step_size * re_count, step_size)) +
   # lock both plots to 0.8–1.8 on y
-  coord_cartesian(ylim = c(1, 2)) +
+  coord_cartesian(ylim = c(1, 1.8)) +
   theme(
     # remove the plot title entirely
     plot.title      = element_blank(),
